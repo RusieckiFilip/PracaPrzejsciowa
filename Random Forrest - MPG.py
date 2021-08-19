@@ -37,15 +37,27 @@ dataset = dataset.dropna()
 dataset = dataset[['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight',
        'Acceleration', 'Model Year']]
 
-dataset['Weight [kg]'] = dataset['Weight']*0.453592
+dataset['Cięzar [kg]'] = dataset['Weight']*0.453592
 
-dataset['Displacement [l]'] = dataset['Displacement']*0.0163871
+dataset['Objetosc skokowa [l]'] = dataset['Displacement']*0.0163871
 
-dataset['Fuel consumption [km/l]'] = dataset['MPG']*0.425144
+dataset['Zuzycie paliwa [km/l]'] = dataset['MPG']*0.425144
+
+dataset["Moc [KM]"] = dataset['Horsepower']
+
+dataset["Przyspieszenie [m/s^2]"] = dataset['Acceleration']
+
+dataset["Rok produkcji"] = dataset['Model Year']
+
+dataset["Liczba cylindrów"] = dataset['Cylinders']
 
 dataset = dataset.drop(['MPG'], axis=1)
 dataset = dataset.drop(['Displacement'], axis=1)
 dataset = dataset.drop(['Weight'], axis=1)
+dataset = dataset.drop(['Horsepower'], axis=1)
+dataset = dataset.drop(['Acceleration'], axis=1)
+dataset = dataset.drop(['Model Year'], axis=1)
+dataset = dataset.drop(['Cylinders'], axis=1)
 
 for column in dataset:
     unique_vals = np.unique(dataset[column])
@@ -69,16 +81,16 @@ mask[np.triu_indices_from(mask)] = True
 # Draw the heatmap with the mask
 plt.figure('Heatmap MPG')
 plt.clf()
-plt.yticks(va="center")
-plt.xticks(rotation=360)
 #Visualizing Correlation with a Heatmap
 sns.heatmap(hm, mask=mask, square=True,
             annot = True, annot_kws={'size':20}, cmap="Blues")
+plt.yticks(va="center")
+plt.xticks(rotation=15)
 
 # Split the data into X & y
 
-X = dataset.drop('Fuel consumption [km/l]', axis = 1).values
-y = dataset['Fuel consumption [km/l]']
+X = dataset.drop('Zuzycie paliwa [km/l]', axis = 1).values
+y = dataset['Zuzycie paliwa [km/l]']
 
 # Hold-out validation
 
@@ -117,15 +129,15 @@ y_pred_val = forest_reg.predict(X_valid)
 
 # Model Accuracy on training dataset
 
-print('The Accuracy on the training dataset is: ', forest_reg.score(X_train, y_train) )
-print('The Accuracy n2  on the training dataset is: ',r2_score(y_train,y_pred) )   
+print('The Accuracy on the training dataset is: ', forest_reg.score(X_train, y_train))
+print('The Accuracy n2  on the training dataset is: ',r2_score(y_train,y_pred))   
 
 
 
 print("")
 # Model Accuracy on testing dataset
-print('The Accuracy on the testing dataset is: ', forest_reg.score(X_test, y_test) )
-print('The Accuracy on the validation dataset is: ', forest_reg.score(X_valid, y_valid) )
+print('The Accuracy on the testing dataset is: ', forest_reg.score(X_test, y_test))
+print('The Accuracy on the validation dataset is: ', forest_reg.score(X_valid, y_valid))
 
 print("")
 # The Root Mean Squared Error (RMSE)

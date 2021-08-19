@@ -10,6 +10,16 @@ from sklearn.metrics import r2_score, explained_variance_score, mean_absolute_er
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import r2_score, explained_variance_score, confusion_matrix, accuracy_score, classification_report, log_loss
 from math import sqrt
+
+######################
+# Oversample with SMOTE and random undersample for imbalanced dataset
+from collections import Counter
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.pipeline import Pipeline
+#####################
+
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
@@ -120,6 +130,20 @@ X_train_t, X_test_t, y_train_t, y_test_t = train_test_split(X_turb, y_turb,
                                                     train_size = 0.7,
                                                     test_size=0.3, random_state=10)
 
+# summarize class distribution
+counter = Counter(y_train_t)
+print(counter)
+# define pipeline
+over = SMOTE(sampling_strategy=0.2)
+under = RandomUnderSampler(sampling_strategy=0.5)
+steps = [('o', over), ('u', under)]
+pipeline = Pipeline(steps=steps)
+# transform the dataset
+X_train_t, y_train_t = pipeline.fit_resample(X_train_t, y_train_t)
+# summarize the new class distribution
+counter = Counter(y_train_t)
+print(counter)
+
 #SUPERCHARGER
 X_train_s, X_test_s, y_train_s, y_test_s = train_test_split(X_super, y_super,
                                                     train_size = 0.7,
@@ -153,7 +177,7 @@ X_train_SST, X_valid_SST, y_train_SST, y_valid_SST = train_test_split(X_train_SS
 # Training model
 
 #TURBOCHARGER
-weights_t = {0:0.5, 1:1.5}
+weights_t = {0:1, 1:1}
 log_reg_t = LogisticRegression(random_state=10, 
                                solver = 'lbfgs',class_weight=weights_t, max_iter=300000)
 log_reg_t.fit(X_train_t, y_train_t)
@@ -230,16 +254,25 @@ print("The Validation Accuracy of SST is: ", log_reg_SST.score(X_valid_SST, y_va
 print("")
 
 # Classification Report
+
+print("CLASSIFACATION RAPORT OF TURBOCHARGER (TRAINING)\n",  classification_report(y_train_t, 
+                                                                      log_reg_t.predict(X_train_t)))
 print("CLASSIFACATION RAPORT OF TURBOCHARGER (TESTING)\n",  classification_report(y_test_t, 
                                                                       log_reg_t.predict(X_test_t)))
 print("CLASSIFACATION RAPORT OF TURBOCHARGER (VALIDATION)\n",  classification_report(y_valid_t, 
                                                                       log_reg_t.predict(X_valid_t)))
 
+
+print("CLASSIFACATION RAPORT OF SUPERCHARGER (TRAINING)\n",  classification_report(y_train_s,
+                                                                      log_reg_s.predict(X_train_s)))
 print("CLASSIFACATION RAPORT OF SUPERCHARGER (TESTING)\n",  classification_report(y_test_s,
                                                                       log_reg_s.predict(X_test_s)))
 print("CLASSIFACATION RAPORT OF SUPERCHARGER (VALIDATION)\n",  classification_report(y_valid_s,
                                                                       log_reg_s.predict(X_valid_s)))
 
+
+print("CLASSIFACATION RAPORT OF SST (TRAINING)\n",  classification_report(y_train_SST,
+                                                             log_reg_SST.predict(X_train_SST)))
 print("CLASSIFACATION RAPORT OF SST (TESTING)\n",  classification_report(y_test_SST,
                                                              log_reg_SST.predict(X_test_SST)))
 print("CLASSIFACATION RAPORT OF SST (VALIDATION)\n",  classification_report(y_valid_SST,
@@ -251,16 +284,96 @@ def plot_confusion_matrix(cm, classes=None, title='Confusion matrix'):
     """Plots a confusion matrix."""
     if classes is not None:
         sns.heatmap(cm, cmap="YlGnBu", xticklabels=classes, yticklabels=classes, 
-                    vmin=0., vmax=1., annot=True, annot_kws={'size':50})
+                    vmin=0., vmax=1., annot=True, annot_kws={'size':30})
     else:
         sns.heatmap(cm, vmin=0., vmax=1.)
     plt.title(title)
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+    plt.ylabel('Klasa rzeczywista')
+    plt.xlabel('Klasa predykowana')
 
 # Visualizing cm
-plt.clf()
-cm = confusion_matrix(y_train_t, y_pred_t)
-cm_norm = cm / cm.sum(axis=1).reshape(-1,1)
 
-plot_confusion_matrix(cm_norm, classes = log_reg_t.classes_, title='Confusion matrix')
+###  TURBOCHARGER  ####
+
+plt.figure("Turbocharger")
+plt.clf()
+plt.suptitle('Tablica pomyłek - Turbodoładowanie', fontsize=15) 
+
+
+cm_train = confusion_matrix(y_train_t, y_pred_t)
+cm_norm_train = cm_train / cm_train.sum(axis=1).reshape(-1,1)
+
+plt.subplot(131)
+plot_confusion_matrix(cm_norm_train, classes = log_reg_t.classes_, title='Trening')
+
+cm_test = confusion_matrix(y_test_t, log_reg_t.predict(X_test_t))
+cm_norm_test = cm_test / cm_test.sum(axis=1).reshape(-1,1)
+
+plt.subplot(132)
+plot_confusion_matrix(cm_norm_test, classes = log_reg_t.classes_, title='Test')
+
+cm_valid = confusion_matrix(y_valid_t, log_reg_t.predict(X_valid_t))
+cm_norm_valid = cm_valid / cm_valid.sum(axis=1).reshape(-1,1)
+
+plt.subplot(133)
+plot_confusion_matrix(cm_norm_valid, classes = log_reg_t.classes_, title='Walidacja')
+
+#plt.tight_layout()
+
+
+
+###  SUPERCHARGER  ####
+
+plt.figure("Supercharger")
+plt.clf()
+plt.suptitle('Tablica pomyłek - Sprężarka doładowująca', fontsize=15) 
+
+
+cm_train = confusion_matrix(y_train_s, y_pred_s)
+cm_norm_train = cm_train / cm_train.sum(axis=1).reshape(-1,1)
+
+plt.subplot(131)
+plot_confusion_matrix(cm_norm_train, classes = log_reg_s.classes_, title='Trening')
+
+cm_test = confusion_matrix(y_test_s, log_reg_s.predict(X_test_s))
+cm_norm_test = cm_test / cm_test.sum(axis=1).reshape(-1,1)
+
+plt.subplot(132)
+plot_confusion_matrix(cm_norm_test, classes = log_reg_s.classes_, title='Test')
+
+cm_valid = confusion_matrix(y_valid_s, log_reg_s.predict(X_valid_s))
+cm_norm_valid = cm_valid / cm_valid.sum(axis=1).reshape(-1,1)
+
+plt.subplot(133)
+plot_confusion_matrix(cm_norm_valid, classes = log_reg_s.classes_, title='Walidacja')
+
+#plt.tight_layout()
+
+
+###  SST  ####
+
+plt.figure("SST")
+plt.clf()
+plt.suptitle('Tablica pomyłek - SST', fontsize=15) 
+
+
+cm_train = confusion_matrix(y_train_SST, y_pred_SST)
+cm_norm_train = cm_train / cm_train.sum(axis=1).reshape(-1,1)
+
+plt.subplot(131)
+plot_confusion_matrix(cm_norm_train, classes = log_reg_SST.classes_, title='Trening')
+
+cm_test = confusion_matrix(y_test_SST, log_reg_SST.predict(X_test_SST))
+cm_norm_test = cm_test / cm_test.sum(axis=1).reshape(-1,1)
+
+plt.subplot(132)
+plot_confusion_matrix(cm_norm_test, classes = log_reg_SST.classes_, title='Test')
+
+cm_valid = confusion_matrix(y_valid_SST, log_reg_SST.predict(X_valid_SST))
+cm_norm_valid = cm_valid / cm_valid.sum(axis=1).reshape(-1,1)
+
+plt.subplot(133)
+plot_confusion_matrix(cm_norm_valid, classes = log_reg_SST.classes_, title='Walidacja')
+
+#plt.tight_layout()
+
